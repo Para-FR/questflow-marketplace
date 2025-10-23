@@ -1,0 +1,8 @@
+{
+  "name": "qf",
+  "version": "1.0.0",
+  "description": "QuestFlow - CLI access to your gamified productivity system",
+  "author": {
+    "name": "QuestFlow Team"
+  }
+}

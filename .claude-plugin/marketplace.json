@@ -1,0 +1,23 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "questflow-marketplace",
+  "version": "1.0.0",
+  "description": "QuestFlow plugins for gamified productivity",
+  "owner": {
+    "name": "QuestFlow Team",
+    "email": "support@questflow.app"
+  },
+  "plugins": [
+    {
+      "name": "qf",
+      "description": "QuestFlow - CLI access to your gamified productivity system",
+      "version": "1.0.0",
+      "author": {
+        "name": "QuestFlow Team",
+        "email": "support@questflow.app"
+      },
+      "source": "./plugins/qf",
+      "category": "productivity"
+    }
+  ]
+}
