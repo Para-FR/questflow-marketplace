@@ -9,12 +9,13 @@ import {
 } from "@modelcontextprotocol/sdk/types.js";
 
 // Configuration
-const API_URL = process.env.QUESTFLOW_API_URL || "http://localhost:3005";
+const API_URL = process.env.QUESTFLOW_API_URL || "http://localhost:3014";
 const API_KEY = process.env.QUESTFLOW_API_KEY || "";
 
 if (!API_KEY) {
   console.error("❌ QUESTFLOW_API_KEY environment variable is required");
-  console.error("Generate one at: http://localhost:3005/settings");
+  console.error(`Generate one at: ${API_URL}/settings`);
+  console.error("Run /qf:setup to configure your API key");
   process.exit(1);
 }
 

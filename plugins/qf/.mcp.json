@@ -5,7 +5,8 @@
       "args": ["run", "${CLAUDE_PLUGIN_ROOT}/src/mcp-server.ts"],
       "env": {
         "QUESTFLOW_API_URL": "${QUESTFLOW_API_URL:-https://quest.cc-france.org}",
-        "QUESTFLOW_API_KEY": "${QUESTFLOW_API_KEY}"
+        "QUESTFLOW_API_KEY": "${QUESTFLOW_API_KEY}",
+        "NODE_TLS_REJECT_UNAUTHORIZED": "0"
       }
     }
   }

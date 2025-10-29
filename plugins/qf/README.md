@@ -2,25 +2,34 @@
 
 Manage your QuestFlow tasks directly from Claude Code!
 
-## Installation
+## Quick Setup
 
-1. The plugin is already installed at `~/.claude/plugins/qf/`
-2. Generate an API key at http://localhost:3005/settings
-3. Update your API key in `.mcp.json`:
-   ```json
-   {
-     "mcpServers": {
-       "questflow": {
-         "command": "bun",
-         "args": ["run", "src/mcp-server.ts"],
-         "env": {
-           "QUESTFLOW_API_URL": "http://localhost:3005",
-           "QUESTFLOW_API_KEY": "your-api-key-here"
-         }
-       }
-     }
-   }
-   ```
+Simply run:
+```
+/qf:setup
+```
+
+This will:
+1. ✅ Check and install Bun if needed
+2. 📦 Install plugin dependencies
+3. 🌍 Choose between local development or production environment
+4. 🔑 Configure your API key securely
+
+### Environments
+
+**Local Development**: Use `http://localhost:3014` when running QuestFlow on your machine
+**Production**: Use `https://quest.cc-france.org` for the deployed server
+
+## Manual Installation (Advanced)
+
+If you prefer to configure manually:
+
+1. Ensure Bun is installed: `bun --version`
+2. Install dependencies: `cd ~/.claude/plugins/marketplaces/questflow-marketplace/plugins/qf && bun install`
+3. Generate an API key:
+   - Local: http://localhost:3014/settings
+   - Production: https://quest.cc-france.org/settings
+4. Update `.mcp.json` with your environment and API key
 
 ## Available Commands
 
@@ -76,26 +85,38 @@ The plugin provides these MCP tools that Claude Code can use:
 
 ## Configuration
 
-### Change API URL (for production)
+### Switching Between Environments
 
-Edit `.mcp.json` and update `QUESTFLOW_API_URL`:
+To switch between local and production, run `/qf:setup` again and choose a different environment. Or manually edit `.mcp.json`:
+
+**Local Development:**
 ```json
-"QUESTFLOW_API_URL": "https://questflow.app"
+"QUESTFLOW_API_URL": "http://localhost:3014"
+```
+
+**Production:**
+```json
+"QUESTFLOW_API_URL": "https://quest.cc-france.org"
 ```
 
 ### Troubleshooting
 
 **Error: QUESTFLOW_API_KEY is required**
-- Generate a new API key at /settings
-- Update `.mcp.json` with your key
+- Run `/qf:setup` to configure your API key
+- Or generate a new key manually at your environment's /settings page
 
 **Error: 401 Unauthorized**
-- Your API key may be revoked
-- Generate a new one and update `.mcp.json`
+- Your API key may be revoked or invalid
+- Run `/qf:setup` to reconfigure with a new key
 
 **Server not responding**
-- Ensure QuestFlow dev server is running on port 3005
-- Check `QUESTFLOW_API_URL` in `.mcp.json`
+- **Local**: Ensure QuestFlow dev server is running on port 3014 (`bun run dev`)
+- **Production**: Check your internet connection
+- Verify `QUESTFLOW_API_URL` in `.mcp.json` matches your environment
+
+**Bun not found**
+- Run `/qf:setup` which will install Bun automatically
+- Or install manually: `curl -fsSL https://bun.sh/install | bash`
 
 ## Development
 
