@@ -73,6 +73,10 @@ const tools: Tool[] = [
           type: "number",
           description: "Estimated time in minutes",
         },
+        projectId: {
+          type: "string",
+          description: "Optional project ID to assign quest to (premium feature)",
+        },
       },
       required: ["title", "difficulty", "type"],
     },
@@ -165,6 +169,151 @@ const tools: Tool[] = [
       required: ["itemId"],
     },
   },
+  {
+    name: "listProjects",
+    description: "List all projects (premium feature)",
+    inputSchema: {
+      type: "object",
+      properties: {
+        status: {
+          type: "string",
+          enum: ["active", "archived", "completed"],
+          description: "Filter by project status",
+        },
+      },
+    },
+  },
+  {
+    name: "createProject",
+    description: "Create a new project (premium feature)",
+    inputSchema: {
+      type: "object",
+      properties: {
+        name: {
+          type: "string",
+          description: "Project name (1-100 characters)",
+        },
+        description: {
+          type: "string",
+          description: "Project description (optional, max 500 characters)",
+        },
+        emoji: {
+          type: "string",
+          description: "Project emoji icon (max 10 characters)",
+        },
+        color: {
+          type: "string",
+          description: "Project color in hex format (e.g., #6366f1)",
+        },
+      },
+      required: ["name", "emoji", "color"],
+    },
+  },
+  {
+    name: "getProject",
+    description: "Get project details with stats and quests (premium feature)",
+    inputSchema: {
+      type: "object",
+      properties: {
+        projectId: {
+          type: "string",
+          description: "Project ID to retrieve",
+        },
+      },
+      required: ["projectId"],
+    },
+  },
+  {
+    name: "updateProject",
+    description: "Update project details (premium feature)",
+    inputSchema: {
+      type: "object",
+      properties: {
+        projectId: {
+          type: "string",
+          description: "Project ID to update",
+        },
+        name: {
+          type: "string",
+          description: "New project name (optional)",
+        },
+        description: {
+          type: "string",
+          description: "New project description (optional)",
+        },
+        emoji: {
+          type: "string",
+          description: "New project emoji (optional)",
+        },
+        color: {
+          type: "string",
+          description: "New project color (optional)",
+        },
+        status: {
+          type: "string",
+          enum: ["active", "archived", "completed"],
+          description: "New project status (optional)",
+        },
+      },
+      required: ["projectId"],
+    },
+  },
+  {
+    name: "archiveProject",
+    description: "Archive a project and unassign all quests (premium feature)",
+    inputSchema: {
+      type: "object",
+      properties: {
+        projectId: {
+          type: "string",
+          description: "Project ID to archive",
+        },
+      },
+      required: ["projectId"],
+    },
+  },
+  {
+    name: "assignQuestsToProject",
+    description: "Assign quests to a project (premium feature, max 50 quests per operation)",
+    inputSchema: {
+      type: "object",
+      properties: {
+        projectId: {
+          type: "string",
+          description: "Project ID to assign quests to",
+        },
+        questIds: {
+          type: "array",
+          items: {
+            type: "string",
+          },
+          description: "Array of quest IDs to assign (max 50)",
+        },
+      },
+      required: ["projectId", "questIds"],
+    },
+  },
+  {
+    name: "unassignQuestsFromProject",
+    description: "Unassign quests from a project (premium feature)",
+    inputSchema: {
+      type: "object",
+      properties: {
+        projectId: {
+          type: "string",
+          description: "Project ID to unassign quests from",
+        },
+        questIds: {
+          type: "array",
+          items: {
+            type: "string",
+          },
+          description: "Array of quest IDs to unassign",
+        },
+      },
+      required: ["projectId", "questIds"],
+    },
+  },
 ];
 
 // Create MCP server
@@ -196,17 +345,25 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           method: "POST",
           body: JSON.stringify(args),
         });
+
+        let message = `✅ Quest created successfully!\n\n` +
+                     `📝 Title: ${result.quest.title}\n` +
+                     `⚡ Difficulty: ${result.quest.difficulty}\n` +
+                     `🎯 Type: ${result.quest.type}\n` +
+                     `🏆 XP Reward: ${result.quest.xpReward}\n` +
+                     `💰 Coin Reward: ${result.quest.coinReward}\n`;
+
+        if (result.quest.projectId) {
+          message += `📁 Assigned to project: ${result.quest.projectId}\n`;
+        }
+
+        message += `🆔 ID: ${result.quest._id}`;
+
         return {
           content: [
             {
               type: "text",
-              text: `✅ Quest created successfully!\n\n` +
-                    `📝 Title: ${result.quest.title}\n` +
-                    `⚡ Difficulty: ${result.quest.difficulty}\n` +
-                    `🎯 Type: ${result.quest.type}\n` +
-                    `🏆 XP Reward: ${result.quest.xpReward}\n` +
-                    `💰 Coin Reward: ${result.quest.coinReward}\n` +
-                    `🆔 ID: ${result.quest._id}`,
+              text: message,
             },
           ],
         };
@@ -228,9 +385,14 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           };
         }
 
-        const questList = quests.map((q: any) =>
-          `• [${q.status}] ${q.title} (${q.difficulty}, ${q.type}) - ${q.xpReward} XP | ID: ${q._id}`
-        ).join("\n");
+        const questList = quests.map((q: any) => {
+          let line = `• [${q.status}] ${q.title} (${q.difficulty}, ${q.type}) - ${q.xpReward} XP`;
+          if (q.projectId) {
+            line += ` | 📁 Project`;
+          }
+          line += ` | ID: ${q._id}`;
+          return line;
+        }).join("\n");
 
         return {
           content: [
@@ -363,6 +525,149 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                     `🎁 ${result.item.name}\n` +
                     `💰 -${result.item.price} coins\n` +
                     `💵 Remaining: ${result.coinsRemaining} coins`,
+            },
+          ],
+        };
+      }
+
+      case "listProjects": {
+        const queryParams = new URLSearchParams();
+        if (args?.status) queryParams.append("status", args.status);
+
+        const result = await apiRequest(`/api/projects?${queryParams}`);
+        const projects = result.projects;
+
+        if (projects.length === 0) {
+          return {
+            content: [
+              { type: "text", text: "📁 No projects found. Create your first project to organize your quests!" },
+            ],
+          };
+        }
+
+        const projectList = projects.map((p: any) =>
+          `• ${p.emoji} ${p.name} (${p.status})\n` +
+          `  📊 ${p.stats.completedQuests}/${p.stats.totalQuests} quests (${p.stats.completionRate}%) | ${p.stats.totalXP} XP | ID: ${p._id}`
+        ).join("\n\n");
+
+        return {
+          content: [
+            {
+              type: "text",
+              text: `📁 Your Projects (${projects.length}):\n\n${projectList}`,
+            },
+          ],
+        };
+      }
+
+      case "createProject": {
+        const result = await apiRequest("/api/projects", {
+          method: "POST",
+          body: JSON.stringify(args),
+        });
+        return {
+          content: [
+            {
+              type: "text",
+              text: `✅ Project created successfully!\n\n` +
+                    `${result.project.emoji} ${result.project.name}\n` +
+                    `📝 ${result.project.description || "No description"}\n` +
+                    `🎨 Color: ${result.project.color}\n` +
+                    `🆔 ID: ${result.project._id}`,
+            },
+          ],
+        };
+      }
+
+      case "getProject": {
+        const result = await apiRequest(`/api/projects/${args.projectId}`);
+        const p = result.project;
+        const quests = result.quests;
+
+        let message = `${p.emoji} ${p.name}\n` +
+                     `📝 ${p.description || "No description"}\n\n` +
+                     `📊 Project Stats:\n` +
+                     `   • Total Quests: ${p.stats.totalQuests}\n` +
+                     `   • Completed: ${p.stats.completedQuests}\n` +
+                     `   • In Progress: ${p.stats.inProgressQuests}\n` +
+                     `   • Completion Rate: ${p.stats.completionRate}%\n` +
+                     `   • Total XP: ${p.stats.totalXP}`;
+
+        if (quests.length > 0) {
+          message += `\n\n📋 Assigned Quests (${quests.length}):\n`;
+          quests.slice(0, 10).forEach((q: any) => {
+            message += `   • [${q.status}] ${q.title} (${q.xpReward} XP)\n`;
+          });
+          if (quests.length > 10) {
+            message += `   ... and ${quests.length - 10} more`;
+          }
+        }
+
+        return {
+          content: [{ type: "text", text: message }],
+        };
+      }
+
+      case "updateProject": {
+        const { projectId, ...updateData } = args;
+        const result = await apiRequest(`/api/projects/${projectId}`, {
+          method: "PATCH",
+          body: JSON.stringify(updateData),
+        });
+        return {
+          content: [
+            {
+              type: "text",
+              text: `✅ Project updated successfully!\n\n` +
+                    `${result.project.emoji} ${result.project.name}\n` +
+                    `Status: ${result.project.status}`,
+            },
+          ],
+        };
+      }
+
+      case "archiveProject": {
+        const result = await apiRequest(`/api/projects/${args.projectId}`, {
+          method: "DELETE",
+        });
+        return {
+          content: [
+            {
+              type: "text",
+              text: `✅ ${result.message}\n\n` +
+                    `${result.project.emoji} ${result.project.name} has been archived.`,
+            },
+          ],
+        };
+      }
+
+      case "assignQuestsToProject": {
+        const result = await apiRequest(`/api/projects/${args.projectId}/quests`, {
+          method: "POST",
+          body: JSON.stringify({ questIds: args.questIds }),
+        });
+        return {
+          content: [
+            {
+              type: "text",
+              text: `✅ ${result.message}\n` +
+                    `📊 ${result.assignedCount} quest(s) assigned to project.`,
+            },
+          ],
+        };
+      }
+
+      case "unassignQuestsFromProject": {
+        const result = await apiRequest(`/api/projects/${args.projectId}/quests`, {
+          method: "DELETE",
+          body: JSON.stringify({ questIds: args.questIds }),
+        });
+        return {
+          content: [
+            {
+              type: "text",
+              text: `✅ ${result.message}\n` +
+                    `📊 ${result.unassignedCount} quest(s) unassigned from project.`,
             },
           ],
         };
